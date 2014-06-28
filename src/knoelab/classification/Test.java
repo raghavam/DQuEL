@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -48,12 +49,8 @@ public class Test {
 	
 	public static void main(String[] args) throws Exception {
 		
-		OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-		File ontFile = new File(args[0]);
-		IRI documentIRI = IRI.create(ontFile);
-		OWLOntology ontology = manager.loadOntologyFromOntologyDocument(documentIRI);
-		System.out.println("No of classes: " + ontology.getClassesInSignature().size());
-		System.out.println("No of logical axioms: " + ontology.getLogicalAxiomCount());
+		BitSet b = new BitSet();
+		
 	}
 }
 

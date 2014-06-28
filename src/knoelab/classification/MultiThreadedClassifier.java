@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.pool.impl.GenericObjectPool.Config;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -48,13 +49,14 @@ public class MultiThreadedClassifier implements Classifier {
 		List<HostInfo> hostInfoList = propertyFileHandler.getAllShardsInfo();
 		for(HostInfo hostInfo : hostInfoList)
 			shards.add(new JedisShardInfo(hostInfo.host, hostInfo.port));
-		Config poolConfig = new Config();
+		GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+//		Config poolConfig = new Config();
 		// non-positive number indicates an infinite pool
-		poolConfig.maxActive = -1;
+//		poolConfig.maxActive = -1;
 		// non-positive number indicates that idle objects in the pool shouldn't be thrown out
-		poolConfig.timeBetweenEvictionRunsMillis = -1; 
+//		poolConfig.timeBetweenEvictionRunsMillis = -1; 
 		
-		shardedJedisPool = new ShardedJedisPool(poolConfig, shards, Hashing.MURMUR_HASH, ShardedJedis.DEFAULT_KEY_TAG_PATTERN);
+		shardedJedisPool = new ShardedJedisPool(poolConfig, shards);
 		HostInfo localQueuehostInfo = propertyFileHandler.getLocalHostInfo();
 		// set timeout in jedispool to a large value until a way to set it to infinite is found
 		// need to actually set it to 0 but there is a bug in JedisPool code
@@ -190,7 +192,7 @@ public class MultiThreadedClassifier implements Classifier {
 				}
 				for(byte[] cj : naryConjuncts) 
 					p.sismember(SofA, cj);
-				List<Object> results = p.sync();
+				List<Object> results = p.syncAndReturnAll();
 				// if all are true then call process(A, B')
 				boolean insert = true;
 				for(Object obj : results) {

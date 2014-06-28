@@ -79,24 +79,32 @@ public class RedisTest {
 	}
 
 	public static void createRandomSets(Jedis jedis, int max) throws Exception {
+		long startTime1 = System.nanoTime();
+		jedis.flushAll();
 		Random r = new Random();
 		byte[] localKeyByte = localKeys.getBytes("UTF-8");
-//		Pipeline p = jedis.pipelined();
+		Pipeline p = jedis.pipelined();
 		for(int i = 1; i <= max; i++) {
 			byte[] key = new byte[4];
 			r.nextBytes(key);
 			for(int j = 1; j <= 20; j++) {
 				byte[] value = new byte[4];
 				r.nextBytes(value);
-//				p.sadd(key, value);
-				jedis.sadd(key, value);
+				p.sadd(key, value);
+//				jedis.sadd(key, value);
 			}
 //			if(i%101 == 0)
 //				p.sync();
-//			p.sadd(localKeyByte, key);		
-			jedis.sadd(localKeyByte, key);
+			p.sadd(localKeyByte, key);		
+//			jedis.sadd(localKeyByte, key);
 		}
-//		p.sync();
+		long startTime2 = System.nanoTime();
+		p.sync();
+		long endTime = System.nanoTime();
+		double diffTime1 = (endTime - startTime1)/(double)1000000000;
+		double diffTime2 = (endTime - startTime2)/(double)1000000000;
+		System.out.println("Total time taken: " + diffTime1);
+		System.out.println("Time taken for sync(): " + diffTime2);
 	}
 	
 	public static void readIterateSets(Jedis jedis) throws Exception {
