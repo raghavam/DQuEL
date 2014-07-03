@@ -34,6 +34,7 @@ public class TerminationController extends JedisPubSub {
 	public TerminationController() {
 		PropertyFileHandler propertyFileHandler = PropertyFileHandler.getInstance();
 		int totalMachines = propertyFileHandler.getShardCount();
+		//node sends only one message in an 'iteration'. So this is fine.
 		doneMsgQueue = new LinkedBlockingQueue<MachineAddrTime>(totalMachines);
 		notDoneMsgQueue = new LinkedBlockingQueue<String>(totalMachines);
 		atomicState = new AtomicReference<TCState>(TCState.NO_CHECK);
@@ -193,7 +194,13 @@ class MessageProcessor implements Runnable {
 
 
 /**
- * Represents the different states of TC
+ * Represents the different states of TC. Double check is required
+ * considering the following situation: Node n1 finds its queues empty
+ * at t1 and node n2 finds out that its queues are empty at t2; t1 != t2;
+ * both of them send 'DONE' msg to TC. But they could have placed items in
+ * the queues of other nodes. That is why a second check and reset (if queues
+ * are not empty) is required.
+ * 
  * @author Raghava
  *
  */
