@@ -1,4 +1,4 @@
-<project name="DistributedQueueEL" default="jar" basedir=".">
+<project name="DQuEL" default="jar" basedir=".">
 
 	<property name="src" value="src">
 	</property>
@@ -27,231 +27,18 @@
 		</javac>
 	</target>	
 	
-	
 	<target name="jar" depends="compile">
 		<jar destfile="${dist}/${ant.project.name}.jar" basedir="${build}">
 			<zipgroupfileset dir="${lib}" includes="*.jar"/>
 		</jar>
 	</target>
 	
-	<target name="load-axioms" depends="compile">
-		<java classname="knoelab.classification.AxiomLoader" fork="true">
-			<arg value="${ontology}"/>
-			<classpath>
-				<dirset dir="${build}"></dirset>
-				
-				<fileset dir="${lib}">
-					<include name="*.jar"/>
-				</fileset>
-			</classpath>
-		</java>	
-	</target>
-	
-	<target name="classify" depends="compile">
-			<java classname="knoelab.classification.ELClassifier" fork="true">
-				<classpath>
-					<dirset dir="${build}"></dirset>
-					
-					<fileset dir="${lib}">
-						<include name="*.jar"/>
-					</fileset>
-				</classpath>
-			</java>	
-	</target>
-	
-	<target name="mt-classifier" depends="compile">
-				<java classname="knoelab.classification.MultiThreadedClassifier" fork="true">
-					<arg value="${multiplier}"/>
-					<classpath>
-						<dirset dir="${build}"></dirset>
-						
-						<fileset dir="${lib}">
-							<include name="*.jar"/>
-						</fileset>
-					</classpath>
-				</java>	
-	</target>
-	
-	
-	<target name="classify-profile" depends="compile">
-				<java classname="knoelab.classification.ELClassifier" fork="true">
-					<jvmarg value="-javaagent:${profiledir}/profile.jar"/>
-					<jvmarg value = "-Dprofile.properties=${profiledir}/profile.properties"/>
-					<classpath>
-						<dirset dir="${build}"></dirset>
-						
-						<fileset dir="${lib}">
-							<include name="*.jar"/>
-						</fileset>
-					</classpath>
-				</java>	
-			</target>
-	
-	<target name="delete-keys" depends="compile">
-				<java classname="knoelab.classification.DeleteKeys" fork="true">
-					<arg value="${mode}"/>
-					<classpath>
-						<dirset dir="${build}"></dirset>
-						
-						<fileset dir="${lib}">
-							<include name="*.jar"/>
-						</fileset>
-					</classpath>
-				</java>	
-	</target>
-	
-	<target name="classifier-test" depends="compile">
-					<java classname="knoelab.classification.test.ELClassifierTest" fork="true">
-						<arg value="${ontology}"/>
-						<classpath>
-							<dirset dir="${build}"></dirset>
-							
-							<fileset dir="${lib}">
-								<include name="*.jar"/>
-							</fileset>
-						</classpath>
-					</java>	
-		</target>
-	
-	<target name="test" depends="compile">
-						<java classname="knoelab.classification.Test" fork="true">
-							<arg value="${ontology}"/>
-							<classpath>
-								<dirset dir="${build}"></dirset>
-								
-								<fileset dir="${lib}">
-									<include name="*.jar"/>
-								</fileset>
-							</classpath>
-						</java>	
-	</target>
-	
-	<target name="tc" depends="compile">
-							<java classname="knoelab.classification.TerminationController" fork="true">
-								<classpath>
-									<dirset dir="${build}"></dirset>
-									
-									<fileset dir="${lib}">
-										<include name="*.jar"/>
-									</fileset>
-								</classpath>
-							</java>	
-		</target>
-	
-	<target name="logical-axioms" depends="compile">
-						<java classname="knoelab.classification.LogicalAxioms" fork="true">
-							<arg value="${ontology}"/>
-							<classpath>
-								<dirset dir="${build}"></dirset>
-								
-								<fileset dir="${lib}">
-									<include name="*.jar"/>
-								</fileset>
-							</classpath>
-						</java>	
-	</target>
-	
-	<target name="functional-classifier" depends="compile">
-							<java classname="knoelab.classification.SampleClassifier" fork="true">
-								<arg value="${ontology}"/>
-								<jvmarg value="-Xms15g"/> 
-								<jvmarg value="-Xmx15g"/>
-								<classpath>
-									<dirset dir="${build}"></dirset>
-									
-									<fileset dir="${lib}">
-										<include name="*.jar"/>
-									</fileset>
-								</classpath>
-							</java>	
-		</target>
-	
-	<target name="jc" depends="compile">
-								<java classname="knoelab.classification.JobController" fork="true">
-									<classpath>
-										<dirset dir="${build}"></dirset>
-										
-										<fileset dir="${lib}">
-											<include name="*.jar"/>
-										</fileset>
-									</classpath>
-								</java>	
-			</target>
-	
-	<target name="fj-test" depends="compile">
-				<java classname="knoelab.classification.BoxedLongSort" fork="true">
-					<arg value="${threads}"/>
-					<arg value="${num}"/>
-					<arg value="${rep}"/>
-					<classpath>
-						<dirset dir="${build}"></dirset>
-						
-						<fileset dir="${lib}">
-							<include name="*.jar"/>
-						</fileset>
-					</classpath>
-				</java>	
-	</target>
-	
-	<target name="par-sort" depends="compile">
-					<java classname="knoelab.classification.ParallelArraySortDemo" fork="true">
-						<arg value="${num}"/>
-						<arg value="${mul}"/>
-						<classpath>
-							<dirset dir="${build}"></dirset>
-							
-							<fileset dir="${lib}">
-								<include name="*.jar"/>
-							</fileset>
-						</classpath>
-					</java>	
-	</target>
-	
-	<target name="module-loader" depends="compile">
-			<java classname="knoelab.classification.ModuleLoader" fork="true">
-				<arg value="${ontology}"/>
-				<classpath>
-					<dirset dir="${build}"></dirset>
-					
-					<fileset dir="${lib}">
-						<include name="*.jar"/>
-					</fileset>
-				</classpath>
-			</java>	
-		</target>
-	
-	<target name="module-classify" depends="compile">
-				<java classname="knoelab.classification.ModuleClassifier" fork="true">
-					<classpath>
-						<dirset dir="${build}"></dirset>
-						
-						<fileset dir="${lib}">
-							<include name="*.jar"/>
-						</fileset>
-					</classpath>
-				</java>	
-			</target>
-
 	<target name="clean">
 		<delete dir="${build}" quiet="true">
 		</delete>
 		<delete dir="${dist}" quiet="true">
 		</delete>
 	</target>
-	
-	<target name="redis-test" depends="compile">
-							<java classname="knoelab.classification.RedisTest" fork="true">
-								<classpath>
-									<dirset dir="${build}"></dirset>
-									
-									<fileset dir="${lib}">
-										<include name="*.jar"/>
-									</fileset>
-								</classpath>
-							</java>	
-		</target>
-
-<!-- ant test -Dontology=../TestOntologies/Galen/not-galen.owl -->	
 	
 </project>
 

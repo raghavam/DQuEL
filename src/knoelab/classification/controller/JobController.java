@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import knoelab.classification.Classifier;
+import knoelab.classification.Constants;
 import knoelab.classification.ELClassifier;
 import knoelab.classification.HostInfo;
 import knoelab.classification.KeyGenerator;
@@ -58,7 +59,8 @@ public class JobController {
 		messageSeparator = propertyFileHandler.getExistentialAxiomSeparator();
 		tcChannel = propertyFileHandler.getTerminationControllerChannel();
 		HostInfo tcLocation = propertyFileHandler.getTerminationControllerLocation();
-		terminationController = new Jedis(tcLocation.host, tcLocation.port);
+		terminationController = new Jedis(tcLocation.getHost(), 
+				tcLocation.getPort(), Constants.INFINITE_TIMEOUT);
 		charset = propertyFileHandler.getCharset();
 	}
 	
@@ -111,7 +113,8 @@ public class JobController {
 	public void checkAndRestart() throws Exception {
 		// check whether all queues are empty
 		HostInfo localHostInfo = propertyFileHandler.getLocalHostInfo();
-		Jedis localQueues = new Jedis(localHostInfo.host, localHostInfo.port);
+		Jedis localQueues = new Jedis(localHostInfo.getHost(), 
+				localHostInfo.getPort(), Constants.INFINITE_TIMEOUT);
 		byte[] localKeys = propertyFileHandler.getLocalKeys().getBytes(charset);
 		Set<byte[]> conceptsToCheck = localQueues.smembers(localKeys);
 		boolean restartRequired = false;
@@ -197,7 +200,8 @@ class JCMessageHandler implements Runnable {
 	}
 	
 	public void run() {
-		Jedis jedisPubSubListener = new Jedis(localHostInfo.host, localHostInfo.port);
+		Jedis jedisPubSubListener = new Jedis(localHostInfo.getHost(), 
+				localHostInfo.getPort(), Constants.INFINITE_TIMEOUT);
 		jedisPubSubListener.subscribe(new PubSubTC(jobController), channel);
 	}
 }

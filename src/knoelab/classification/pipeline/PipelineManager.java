@@ -2,20 +2,19 @@ package knoelab.classification.pipeline;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import knoelab.classification.Constants;
 import knoelab.classification.HostInfo;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.ShardedJedis;
-import redis.clients.util.Hashing;
 
 public class PipelineManager {
 
@@ -30,15 +29,17 @@ public class PipelineManager {
 		List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
 		
 		for(HostInfo hostInfo : hostInfoList) {
-			shards.add(new JedisShardInfo(hostInfo.host, hostInfo.port));
-			String mapKey = hostInfo.host + hostInfo.port;
+			shards.add(new JedisShardInfo(hostInfo.getHost(), 
+					hostInfo.getPort(), Constants.INFINITE_TIMEOUT));
+			String mapKey = hostInfo.getHost() + hostInfo.getPort();
 			LinkedBlockingQueue<PipelineMessage> pipelineQueue = 
 				new LinkedBlockingQueue<PipelineMessage>(queueBlockingSize);
-			Jedis jedis = new Jedis(hostInfo.host, hostInfo.port);
+			Jedis jedis = new Jedis(hostInfo.getHost(), 
+					hostInfo.getPort(), Constants.INFINITE_TIMEOUT);
 			shardQueue.put(mapKey, pipelineQueue);
 			jedisShards.put(mapKey, jedis);
 		}
-		shardedJedis = new ShardedJedis(shards, Hashing.MURMUR_HASH, ShardedJedis.DEFAULT_KEY_TAG_PATTERN);
+		shardedJedis = new ShardedJedis(shards);
 //		final int MAX_THREADS = Runtime.getRuntime().availableProcessors() * 3;
 //		threadExecutor = Executors.newFixedThreadPool(MAX_THREADS);
 	}

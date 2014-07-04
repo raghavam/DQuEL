@@ -7,7 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.pool.impl.GenericObjectPool.Config;
+import jsr166y.ForkJoinPool;
+
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import redis.clients.jedis.Jedis;
@@ -16,11 +17,8 @@ import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.ShardedJedis;
 import redis.clients.jedis.ShardedJedisPool;
-import redis.clients.util.Hashing;
-
-import extra166y.ParallelArray;
 import extra166y.Ops.Procedure;
-import jsr166y.ForkJoinPool;
+import extra166y.ParallelArray;
 
 /**
  * This is a multi-threaded version of ELClassifier
@@ -48,7 +46,8 @@ public class MultiThreadedClassifier implements Classifier {
         List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
 		List<HostInfo> hostInfoList = propertyFileHandler.getAllShardsInfo();
 		for(HostInfo hostInfo : hostInfoList)
-			shards.add(new JedisShardInfo(hostInfo.host, hostInfo.port));
+			shards.add(new JedisShardInfo(hostInfo.getHost(), 
+					hostInfo.getPort(), Constants.INFINITE_TIMEOUT));
 		GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
 //		Config poolConfig = new Config();
 		// non-positive number indicates an infinite pool
@@ -58,10 +57,8 @@ public class MultiThreadedClassifier implements Classifier {
 		
 		shardedJedisPool = new ShardedJedisPool(poolConfig, shards);
 		HostInfo localQueuehostInfo = propertyFileHandler.getLocalHostInfo();
-		// set timeout in jedispool to a large value until a way to set it to infinite is found
-		// need to actually set it to 0 but there is a bug in JedisPool code
-		int jedisTimeout = 2 * 60 * 60 * 1000;
-		localJedisPool = new JedisPool(poolConfig, localQueuehostInfo.host, localQueuehostInfo.port, jedisTimeout);	
+		localJedisPool = new JedisPool(poolConfig, localQueuehostInfo.getHost(), 
+				localQueuehostInfo.getPort(), Constants.INFINITE_TIMEOUT);	
 		Jedis localJedis = localJedisPool.getResource();
 		byte[] localKeys = propertyFileHandler.getLocalKeys().getBytes(charset);			
 		localConcepts = localJedis.smembers(localKeys);

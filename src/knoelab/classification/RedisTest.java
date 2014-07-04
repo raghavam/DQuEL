@@ -1,23 +1,23 @@
 package knoelab.classification;
 
-import java.io.UnsupportedEncodingException;
 import java.util.GregorianCalendar;
 import java.util.Random;
 import java.util.Set;
 
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.ShardedJedis;
 
 public class RedisTest {
 
 	private static String localKeys = "localkeys";
 	
 	public static void main(String[] args) throws Exception {	
-		readTest();
-//		iotest(Integer.parseInt(args[0]));
-//		iotest1(Integer.parseInt(args[0]));
+//		readTest();
+		
+		//Test results: Byte[] vs String. Turns out that String reading
+		//is faster and writing is slightly slower than byte[] reading/writing
+		iotestByte(Integer.parseInt(args[0]));
+		iotestString(Integer.parseInt(args[0]));
 	}
 	
 	public static void readTest() throws Exception {
@@ -53,34 +53,18 @@ public class RedisTest {
 		System.out.println("Completed in " + completionTimeMin + " mins and " + completionTimeSec + " secs");
 	}
 	
-	public static void iotest(int maxNumber) throws Exception {		
-		Jedis jedis = new Jedis("nimbus2.cs.wright.edu", 6379);		
-		GregorianCalendar startTime = new GregorianCalendar();
+	public static void iotestByte(int maxNumber) throws Exception {		
+		Jedis jedis = new Jedis("nimbus2", 6379);		
+		System.out.println("Creating and writing byte[] random sets to DB");
 		createRandomSets(jedis, maxNumber);
-		GregorianCalendar endTime1 = new GregorianCalendar();
-		System.out.println("Created random sets: " + maxNumber);
+		System.out.println("\nReading byte[] sets from DB");
 		readIterateSets(jedis);
-		GregorianCalendar endTime2 = new GregorianCalendar();
 		jedis.disconnect();
-		double diff = (endTime2.getTimeInMillis() - startTime.getTimeInMillis())/1000;
-		long completionTimeMin = (long)diff/60;
-		double completionTimeSec = diff - (completionTimeMin * 60);
-		System.out.println("Completed in " + completionTimeMin + " mins and " + completionTimeSec + " secs");
-				
-		double diff1 = (endTime1.getTimeInMillis() - startTime.getTimeInMillis())/1000;
-		long completionTimeMin1 = (long)diff1/60;
-		double completionTimeSec1 = diff1 - (completionTimeMin1 * 60);
-		System.out.println("Writing in " + completionTimeMin1 + " mins and " + completionTimeSec1 + " secs");
-		
-		double diff2 = (endTime2.getTimeInMillis() - endTime1.getTimeInMillis())/1000;
-		long completionTimeMin2 = (long)diff2/60;
-		double completionTimeSec2 = diff2 - (completionTimeMin2 * 60);
-		System.out.println("Reading in " + completionTimeMin2 + " mins and " + completionTimeSec2 + " secs");
 	}
 
-	public static void createRandomSets(Jedis jedis, int max) throws Exception {
+	private static void createRandomSets(Jedis jedis, int max) throws Exception {
 		long startTime1 = System.nanoTime();
-		jedis.flushAll();
+		deleteKeys(jedis);
 		Random r = new Random();
 		byte[] localKeyByte = localKeys.getBytes("UTF-8");
 		Pipeline p = jedis.pipelined();
@@ -107,79 +91,95 @@ public class RedisTest {
 		System.out.println("Time taken for sync(): " + diffTime2);
 	}
 	
-	public static void readIterateSets(Jedis jedis) throws Exception {
+	private static void readIterateSets(Jedis jedis) throws Exception {
+		long startTime1 = System.nanoTime();
 		byte[] localKeyByte = localKeys.getBytes("UTF-8");
 		Set<byte[]> keys = jedis.smembers(localKeyByte);
 		System.out.println("Key count: " + keys.size());
-//		Pipeline p = jedis.pipelined();
-		int count = 0;
+		Pipeline p = jedis.pipelined();
 		for(byte[] k : keys) {
-			count++;
-//			p.smembers(k);
-			jedis.smembers(k);
+			p.smembers(k);
+//			jedis.smembers(k);
 //			if(count%100 == 0)
 //				p.sync();
 		}
-		// syncing the keys which are not multiples of 100
-//		p.sync();
+		long startTime2 = System.nanoTime();
+		p.sync();
+		long endTime = System.nanoTime();
+		double diffTime1 = (endTime - startTime1)/(double)1000000000;
+		double diffTime2 = (endTime - startTime2)/(double)1000000000;
+		System.out.println("Total time taken: " + diffTime1);
+		System.out.println("Time taken for sync(): " + diffTime2);
 	}
 	
-	public static void iotest1(int maxNumber) throws Exception {
-		Jedis jedis = new Jedis("nimbus2.cs.wright.edu", 6379);
-		GregorianCalendar startTime = new GregorianCalendar();
+	private static void deleteKeys(Jedis jedis) {
+		boolean anotherAttempt = true; 
+		while(anotherAttempt) {
+			try {
+				jedis.flushAll();
+				anotherAttempt = false;
+			}
+			catch(Exception e) {
+				anotherAttempt = true;
+				System.out.println(e.getMessage());
+				System.out.println("Exception - trying again");
+			}
+		}
+	}
+	
+	public static void iotestString(int maxNumber) throws Exception {
+		Jedis jedis = new Jedis("nimbus2", 6379);		
+		System.out.println("\nCreating and writing random String sets to DB");
 		createRandomSets1(jedis, maxNumber);
-		GregorianCalendar endTime1 = new GregorianCalendar();
-		System.out.println("Created random sets: " + maxNumber);
+		System.out.println("\nReading String sets from DB");
 		readIterateSets1(jedis);
-		GregorianCalendar endTime2 = new GregorianCalendar();
 		jedis.disconnect();
-		double diff = (endTime2.getTimeInMillis() - startTime.getTimeInMillis())/1000;
-		long completionTimeMin = (long)diff/60;
-		double completionTimeSec = diff - (completionTimeMin * 60);
-		System.out.println("Completed in " + completionTimeMin + " mins and " + completionTimeSec + " secs");
-				
-		double diff1 = (endTime1.getTimeInMillis() - startTime.getTimeInMillis())/1000;
-		long completionTimeMin1 = (long)diff1/60;
-		double completionTimeSec1 = diff1 - (completionTimeMin1 * 60);
-		System.out.println("Writing in " + completionTimeMin1 + " mins and " + completionTimeSec1 + " secs");
-		
-		double diff2 = (endTime2.getTimeInMillis() - endTime1.getTimeInMillis())/1000;
-		long completionTimeMin2 = (long)diff2/60;
-		double completionTimeSec2 = diff2 - (completionTimeMin2 * 60);
-		System.out.println("Reading in " + completionTimeMin2 + " mins and " + completionTimeSec2 + " secs");
 	}
 	
-	public static void createRandomSets1(Jedis jedis, int max) throws Exception {
+	private static void createRandomSets1(Jedis jedis, int max) throws Exception {
+		long startTime1 = System.nanoTime();
+		deleteKeys(jedis);
 		Random r = new Random();
-		byte[] localKeyByte = localKeys.getBytes("UTF-8");
 		Pipeline p = jedis.pipelined();
 		for(int i = 1; i <= max; i++) {
-			byte[] key = new byte[4];
-			r.nextBytes(key);
-			p.set(key, key);
-			if(i%99 == 0)
-				p.sync();
-			p.sadd(localKeyByte, key);		
+			long key = r.nextLong();
+			for(int j = 1; j <= 20; j++) {
+				long value = r.nextLong();
+				p.sadd(Long.toString(key), Long.toString(value));
+//				jedis.sadd(key, value);
+			}
+//			if(i%101 == 0)
+//				p.sync();
+			p.sadd(localKeys, Long.toString(key));		
 //			jedis.sadd(localKeyByte, key);
 		}
+		long startTime2 = System.nanoTime();
 		p.sync();
+		long endTime = System.nanoTime();
+		double diffTime1 = (endTime - startTime1)/(double)1000000000;
+		double diffTime2 = (endTime - startTime2)/(double)1000000000;
+		System.out.println("Total time taken: " + diffTime1);
+		System.out.println("Time taken for sync(): " + diffTime2);
 	}
 	
-	public static void readIterateSets1(Jedis jedis) throws Exception {
-		byte[] localKeyByte = localKeys.getBytes("UTF-8");
-		Set<byte[]> keys = jedis.smembers(localKeyByte);
+	private static void readIterateSets1(Jedis jedis) throws Exception {
+		long startTime1 = System.nanoTime();
+		Set<String> keys = jedis.smembers(localKeys);
 		System.out.println("Key count: " + keys.size());
 		Pipeline p = jedis.pipelined();
-		int count = 0;
-		for(byte[] k : keys) {
-			count++;
-			p.get(k);
+		for(String k : keys) {
+			p.smembers(k);
 //			jedis.smembers(k);
-			if(count%100 == 0)
-				p.sync();
+//			if(count%100 == 0)
+//				p.sync();
 		}
-		// syncing the keys which are not multiples of 100
+		long startTime2 = System.nanoTime();
 		p.sync();
+		long endTime = System.nanoTime();
+		double diffTime1 = (endTime - startTime1)/(double)1000000000;
+		double diffTime2 = (endTime - startTime2)/(double)1000000000;
+		System.out.println("Total time taken: " + diffTime1);
+		System.out.println("Time taken for sync(): " + diffTime2);
 	}
 	
 	public void timeTest() {

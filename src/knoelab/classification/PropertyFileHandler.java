@@ -42,25 +42,21 @@ public class PropertyFileHandler {
 	
 	public HostInfo getLocalHostInfo() {
 		String[] hostPort = shardInfoProperties.getProperty("shard.local").split(":");
-		HostInfo localhostInfo = new HostInfo();
-		localhostInfo.host = hostPort[0];
-		localhostInfo.port = Integer.parseInt(hostPort[1]);
+		HostInfo localhostInfo = new HostInfo(hostPort[0], 
+				Integer.parseInt(hostPort[1]));
 		return localhostInfo;
 	}
 	
 	public List<HostInfo> getAllShardsInfo() {
-		List<HostInfo> hostList = new ArrayList<HostInfo>();
-		String shardCountStr = shardInfoProperties.getProperty("shard.count");
-		int shardCount = Integer.parseInt(shardCountStr);
-		for(int i=1; i<=shardCount; i++) {
-			HostInfo hostInfo = new HostInfo();
-			String[] hostPort = shardInfoProperties.getProperty("shard" + i).split(":");
-			hostInfo.host = hostPort[0];
-			hostInfo.port = Integer.parseInt(hostPort[1]); 
-			hostList.add(hostInfo);
+		List<HostInfo> allNodes = new ArrayList<HostInfo>();
+		String csvHosts = shardInfoProperties.getProperty("NODES_LIST");
+		String[] hosts = csvHosts.split(",");
+		for(String hostPort : hosts) {
+			String[] hpSplit = hostPort.split(":");
+			allNodes.add(new HostInfo(hpSplit[0], 
+					Integer.parseInt(hpSplit[1])));
 		}
-		
-		return hostList;
+		return allNodes;
 	}
 	
 	public String getAxiomSymbol() {
@@ -125,14 +121,15 @@ public class PropertyFileHandler {
 	
 	public HostInfo getTerminationControllerLocation() {
 		String[] hostPort = shardInfoProperties.getProperty("tc.location").split(":");
-		HostInfo tcHostInfo = new HostInfo();
-		tcHostInfo.host = hostPort[0];
-		tcHostInfo.port = Integer.parseInt(hostPort[1]);
+		HostInfo tcHostInfo = new HostInfo(hostPort[0], 
+				Integer.parseInt(hostPort[1]));
 		return tcHostInfo;
 	}
 	
 	public int getShardCount() {
-		return Integer.parseInt(shardInfoProperties.getProperty("shard.count"));
+		String csvHosts = shardInfoProperties.getProperty("NODES_LIST");
+		String[] hosts = csvHosts.split(",");
+		return hosts.length;
 	}
 	
 	public String getEquivalentClassKeys() {

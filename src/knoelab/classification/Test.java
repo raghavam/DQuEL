@@ -19,6 +19,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import jpaul.DataStructs.UnionFind;
 
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.IRI;
@@ -49,7 +51,6 @@ public class Test {
 	
 	public static void main(String[] args) throws Exception {
 		
-		BitSet b = new BitSet();
 		
 	}
 }

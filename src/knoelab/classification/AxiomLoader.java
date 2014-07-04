@@ -25,7 +25,6 @@ import org.neo4j.graphdb.Traverser;
 import org.neo4j.graphdb.Traverser.Order;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.io.RDFXMLOntologyFormat;
 import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLClass;
@@ -47,7 +46,6 @@ import org.semanticweb.owlapi.util.OWLEntityRenamer;
 
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.ShardedJedis;
-import redis.clients.util.Hashing;
 
 /**
  * This class is used to load normalized axioms into sharded Redis.
@@ -69,8 +67,9 @@ public class AxiomLoader {
 		List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
 		List<HostInfo> hostInfoList = propertyFileHandler.getAllShardsInfo();		
 		for(HostInfo hostInfo : hostInfoList)
-			shards.add(new JedisShardInfo(hostInfo.host, hostInfo.port));		
-		shardedJedis = new ShardedJedis(shards, Hashing.MURMUR_HASH, ShardedJedis.DEFAULT_KEY_TAG_PATTERN);		
+			shards.add(new JedisShardInfo(hostInfo.getHost(), 
+					hostInfo.getPort(), Constants.INFINITE_TIMEOUT));		
+		shardedJedis = new ShardedJedis(shards);		
 		objPropertySignatures = new HashSet<OWLEntity>();
 		charset = propertyFileHandler.getCharset();
 		pipelineManager = new PipelineManager(hostInfoList, propertyFileHandler.getPipelineQueueSize());
@@ -279,6 +278,7 @@ public class AxiomLoader {
 			for(OWLClassExpression op : operands) 
 				operandIDs.add(conceptToID(op.toString()));
 			
+			//check this: it has to be A1, A2, ..., An -> B
 			for(byte[] operandID : operandIDs) {
 				Set<byte[]> naryConjuncts = new HashSet<byte[]>(operandIDs);
 				naryConjuncts.remove(operandID);

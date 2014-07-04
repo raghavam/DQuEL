@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
+import knoelab.classification.Constants;
 import knoelab.classification.HostInfo;
 import knoelab.classification.MessageType;
 import knoelab.classification.PropertyFileHandler;
@@ -80,7 +81,8 @@ public class TerminationController extends JedisPubSub {
 		HostInfo localHostInfo = propertyFileHandler.getLocalHostInfo();
 		System.out.println("Starting TC...");
 		
-		Jedis jedisPubSubListener = new Jedis(localHostInfo.host, localHostInfo.port);
+		Jedis jedisPubSubListener = new Jedis(localHostInfo.getHost(), 
+				localHostInfo.getPort(), Constants.INFINITE_TIMEOUT);
 		jedisPubSubListener.subscribe(new TerminationController(), channel);
 		// TODO: disconnect jedis instance after verifying
 		jedisPubSubListener.disconnect();
@@ -182,10 +184,17 @@ class MessageProcessor implements Runnable {
 		System.out.println("\nAvg time: " + avgTimeMins + "mins " + avgTimeSecs + "secs");
 	}
 	
+	/**
+	 * WARNING: using 6379 as port, if another port is used, it needs to
+	 * be changed here appropriately.
+	 * 
+	 * @param msgType
+	 */
 	private void sendMsgToJC(MessageType msgType) {
 		MachineAddrTime machineAddrTime;
 		while((machineAddrTime = doneMsgQueue.poll()) != null) {
-			Jedis jcJedis = new Jedis(machineAddrTime.machineIP, 6379);
+			Jedis jcJedis = new Jedis(machineAddrTime.machineIP, 
+					6379, Constants.INFINITE_TIMEOUT);
 			jcJedis.publish(jcChannel, msgType.getMessageTypeCode());
 			jcJedis.disconnect();
 		}

@@ -43,14 +43,17 @@ public class ELClassifier implements Classifier {
 		List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
 		List<HostInfo> hostInfoList = propertyFileHandler.getAllShardsInfo();
 		for(HostInfo hostInfo : hostInfoList)
-			shards.add(new JedisShardInfo(hostInfo.host, hostInfo.port));
-		shardedJedis = new ShardedJedis(shards, Hashing.MURMUR_HASH, ShardedJedis.DEFAULT_KEY_TAG_PATTERN);
+			shards.add(new JedisShardInfo(hostInfo.getHost(), 
+					hostInfo.getPort(), Constants.INFINITE_TIMEOUT));
+		shardedJedis = new ShardedJedis(shards);
 		HostInfo localQueuehostInfo = propertyFileHandler.getLocalHostInfo();
-		localQueueStore = new Jedis(localQueuehostInfo.host, localQueuehostInfo.port);	
+		localQueueStore = new Jedis(localQueuehostInfo.getHost(), 
+				localQueuehostInfo.getPort(), Constants.INFINITE_TIMEOUT);	
 		charset = propertyFileHandler.getCharset();
 		byte[] localKeys = propertyFileHandler.getLocalKeys().getBytes(charset);
 		conceptsToProcess = localQueueStore.smembers(localKeys);	
-		pipelineManager = new PipelineManager(hostInfoList, propertyFileHandler.getPipelineQueueSize());
+		pipelineManager = new PipelineManager(hostInfoList, 
+				propertyFileHandler.getPipelineQueueSize());
 	}
 	
 	@Override
@@ -100,6 +103,7 @@ public class ELClassifier implements Classifier {
 					process(concept, queueEntry);
 				}
 				r3Values.clear();
+				//TODO: why not do a pipeline synch here?
 			}
 			System.out.println("Checking whether all queues are empty");
 			// check if any queue is non-empty
@@ -196,6 +200,7 @@ public class ELClassifier implements Classifier {
 			boolean isMember = true;
 			for(int i = offset, index=0; (i < entry.length) && isMember; i++, index++) {
 				conjunct[index] = entry[i];
+				//check this: doesn't isMember, conjunct get overwritten?
 				if(i%NUM_BYTES == 0) {
 					isMember = localQueueStore.sismember(SofA, conjunct);
 					index = -1;

@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import knoelab.classification.Constants;
 import knoelab.classification.HostInfo;
 import knoelab.classification.KeyGenerator;
 import knoelab.classification.PropertyFileHandler;
@@ -19,7 +20,6 @@ import org.semanticweb.owlapi.reasoner.InferenceType;
 
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.ShardedJedis;
-import redis.clients.util.Hashing;
 
 import com.clarkparsia.pellet.owlapiv3.PelletReasoner;
 import com.clarkparsia.pellet.owlapiv3.PelletReasonerFactory;
@@ -47,9 +47,10 @@ public class ELClassifierTest {
 		List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
 	    List<HostInfo> hostInfoList = propertyFileHandler.getAllShardsInfo();
 		for(HostInfo hostInfo : hostInfoList)
-			shards.add(new JedisShardInfo(hostInfo.host, hostInfo.port));
+			shards.add(new JedisShardInfo(hostInfo.getHost(), 
+					hostInfo.getPort(), Constants.INFINITE_TIMEOUT));
 	    
-		ShardedJedis shardedJedis = new ShardedJedis(shards, Hashing.MURMUR_HASH, ShardedJedis.DEFAULT_KEY_TAG_PATTERN);
+		ShardedJedis shardedJedis = new ShardedJedis(shards);
 		checkClassificationPellet(ontology, shardedJedis);
 //		checkClassificationHermit(normalizedOntology, classifier);
 //		checkClassificationCEL(ontology, classifier);
