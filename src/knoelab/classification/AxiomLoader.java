@@ -278,11 +278,11 @@ public class AxiomLoader {
 			for(OWLClassExpression op : operands) 
 				operandIDs.add(conceptToID(op.toString()));
 			
-			//check this: it has to be A1, A2, ..., An -> B
 			for(byte[] operandID : operandIDs) {
 				Set<byte[]> naryConjuncts = new HashSet<byte[]>(operandIDs);
 				naryConjuncts.remove(operandID);
-				byte[] value = KeyGenerator.generateCompoundAxiomValue(naryConjuncts, superConceptID);
+				byte[] value = KeyGenerator.generateCompoundAxiomValue(
+						naryConjuncts, superConceptID);
 				byte[] axiomKey = KeyGenerator.generateAxiomKey(operandID);
 				byte[] queueKey = KeyGenerator.generateQueueKey(operandID);
 				pipelineManager.psadd(operandID, axiomKey, value);
