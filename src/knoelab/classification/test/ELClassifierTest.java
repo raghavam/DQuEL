@@ -24,7 +24,7 @@ import redis.clients.jedis.ShardedJedis;
 import com.clarkparsia.pellet.owlapiv3.PelletReasoner;
 import com.clarkparsia.pellet.owlapiv3.PelletReasonerFactory;
 
-import de.tudresden.inf.lat.cel.owlapi.CelReasoner;
+import de.tudresden.inf.lat.jcel.owlapi.main.JcelReasoner;
 
 /**
  * This class compares the classification output of Pellet (for a
@@ -64,11 +64,13 @@ public class ELClassifierTest {
 			ShardedJedis shardedJedis) throws Exception {
 		
 		System.out.println("\nVerifying using Pellet\n");
-		PelletReasoner pelletReasoner = PelletReasonerFactory.getInstance().createReasoner( normalizedOntology );
+		PelletReasoner pelletReasoner = PelletReasonerFactory.getInstance().
+				createReasoner( normalizedOntology );
 		Set<OWLClass> classes = normalizedOntology.getClassesInSignature();
 		int ne = 0;
 		for (OWLClass cl : classes) {
-			Set<OWLClass> reasonerSuperclasses = pelletReasoner.getSuperClasses(cl, false).getFlattened();
+			Set<OWLClass> reasonerSuperclasses = pelletReasoner.
+					getSuperClasses(cl, false).getFlattened();
 			// add cl itself to S(X) computed by reasoner. That is missing
 			// in its result.
 			reasonerSuperclasses.add(cl);
@@ -154,21 +156,25 @@ public class ELClassifierTest {
 			ShardedJedis shardedJedis) throws Exception {
 		
 		System.out.println("\nUsing CEL\n");
-		CelReasoner celReasoner = new CelReasoner(normalizedOntology);
-        celReasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
-        celReasoner.flush();
+		JcelReasoner jcelReasoner = new JcelReasoner(
+				normalizedOntology, false);
+	    jcelReasoner.precomputeInferences(
+	    		InferenceType.CLASS_HIERARCHY);
 		Set<OWLClass> classes = normalizedOntology.getClassesInSignature();
 		int ne = 0;
 		for(OWLClass cl : classes) {
-			Set<OWLClass> reasonerSuperclasses = celReasoner.getSuperClasses(cl, false).getFlattened();
+			Set<OWLClass> reasonerSuperclasses = jcelReasoner.getSuperClasses(
+					cl, false).getFlattened();
 			// add cl itself to S(X) computed by reasoner. That is missing
 			// in its result.
 			reasonerSuperclasses.add(cl);
 			// adding equivalent classes -- they are not considered if asked for superclasses
-			Iterator<OWLClass> iterator = celReasoner.getEquivalentClasses(cl).iterator();
+			Iterator<OWLClass> iterator = jcelReasoner.getEquivalentClasses(
+					cl).iterator();
 			while(iterator.hasNext())
 				reasonerSuperclasses.add(iterator.next());
-			byte[] clKey = KeyGenerator.generateSuperclassKey(conceptToID(cl.toString(), shardedJedis));
+			byte[] clKey = KeyGenerator.generateSuperclassKey(conceptToID(
+					cl.toString(), shardedJedis));
 			Set<byte[]> classifiedSuperClasses = shardedJedis.smembers(clKey);				
 			// above 2 sets should be equal
 			if(reasonerSuperclasses.size() != classifiedSuperClasses.size()) { 
@@ -182,17 +188,9 @@ public class ELClassifierTest {
 						"\tdiff: " + diff);
 //				print1(reasonerSuperclasses);
 //				print2(classifiedSuperClasses);
-			}
-/*				for (OWLClass scl : reasonerSuperclasses) {
-				assert classifiedSuperClasses.contains(scl.toString()) : "Mismatch in 2 sets - "
-						+ scl.toString() + " not found";
-				classifiedSuperClasses.remove(scl.toString());
-			}
-			assert classifiedSuperClasses.isEmpty() : "This set should be empty, not of size "
-					+ classifiedSuperClasses.size();
-*/																		
+			}																	
 		}
-		celReasoner.dispose();
+		jcelReasoner.dispose();
 		if(ne == 0)
 			System.out.println("\nTests pass");
 		else
@@ -203,7 +201,7 @@ public class ELClassifierTest {
 		
 		System.out.println("\nComparing Pellet with CEL\n");
 		PelletReasoner pelletReasoner = PelletReasonerFactory.getInstance().createReasoner( normalizedOntology );
-		CelReasoner celReasoner = new CelReasoner(normalizedOntology);
+		JcelReasoner celReasoner = new JcelReasoner(normalizedOntology, false);
         celReasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
         celReasoner.flush();
 		Set<OWLClass> classes = normalizedOntology.getClassesInSignature();
