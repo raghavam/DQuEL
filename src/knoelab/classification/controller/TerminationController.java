@@ -126,7 +126,7 @@ class MessageProcessor implements Runnable {
 				// push it into the done queue
 				MachineAddrTime machineAddrTime = new MachineAddrTime();
 				machineAddrTime.machineIP = codeIPTime[1];
-				machineAddrTime.timeTaken = Long.parseLong(codeIPTime[2]);
+				machineAddrTime.timeTaken = Double.parseDouble(codeIPTime[2]);
 				doneMsgQueue.put(machineAddrTime);
 				
 				// check & remove from not-done queue if present
@@ -170,7 +170,7 @@ class MessageProcessor implements Runnable {
 	
 	private void computeAvgClassificationTime() {
 		Iterator<MachineAddrTime> msgQueueIt = doneMsgQueue.iterator();
-		long totalTime = 0;
+		double totalTime = 0;
 		int totalNodes = 0;
 		while(msgQueueIt.hasNext()) {
 			MachineAddrTime ipTotalTime = msgQueueIt.next();
@@ -178,10 +178,8 @@ class MessageProcessor implements Runnable {
 			System.out.println(ipTotalTime.machineIP + "\t" + ipTotalTime.timeTaken);
 			totalNodes++;
 		}
-		double avgTime = totalTime/(totalNodes * 1000);
-		long avgTimeMins = (long)avgTime/60;
-		double avgTimeSecs = avgTime%60;
-		System.out.println("\nAvg time: " + avgTimeMins + "mins " + avgTimeSecs + "secs");
+		double avgTime = totalTime/(totalNodes * 1000000000);
+		System.out.println("\nAvg time (secs) : " + avgTime);
 	}
 	
 	/**
@@ -217,5 +215,5 @@ enum TCState { NO_CHECK, SINGLE_CHECK_DONE, DOUBLE_CHECK_DONE }
 
 class MachineAddrTime {
 	String machineIP;
-	long timeTaken;
+	double timeTaken;
 }

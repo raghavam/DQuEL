@@ -65,10 +65,10 @@ public class JobController {
 	}
 	
 	public void start() throws Exception {
-		GregorianCalendar startTime = new GregorianCalendar();
+		long startTime = System.nanoTime();
 		classifier.classify();
-		GregorianCalendar endTime = new GregorianCalendar();
-		totalTime += endTime.getTimeInMillis() - startTime.getTimeInMillis();
+		long endTime = System.nanoTime();
+		totalTime += endTime - startTime;
 		
 		// send "DONE" message to TC
 		// MessageFormat: code + machine IP
