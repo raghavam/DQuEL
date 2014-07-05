@@ -1,12 +1,9 @@
 package knoelab.classification;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,7 +12,6 @@ import knoelab.classification.pipeline.PipelineManager;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.ShardedJedis;
-import redis.clients.util.Hashing;
 
 
 /**
@@ -79,17 +75,10 @@ public class ELClassifier implements Classifier {
 		long count = 1;
 		boolean continueProcessing = true;
 		while(continueProcessing) {
-			double conceptCount = 0;
 			System.out.println("Iteration: " + count++);
-			System.out.println("No of concepts to process: " + conceptQueues.size());
+			System.out.println("No of queues to process: " + conceptQueues.size());
 			
-			for (byte[] concept : conceptQueues) {
-				System.out.println("\nAbout to process: " + idToConceptStr(concept));
-				double progress = (conceptCount++/conceptQueues.size())*100.00;
-//				System.out.format("Progress %f: ", progress); 
-				System.out.println("  ConceptCount: " + conceptCount + 
-						"  Time: " + new Date().toString() + "\n");
-				
+			for (byte[] concept : conceptQueues) {				
 				// retrieve R3(A) once for each concept A
 				byte[] R3ofAKey = KeyGenerator.generateResultRoleConceptKey(concept);
 				// selective synch to avoid the problem of missing 
@@ -169,13 +158,11 @@ public class ELClassifier implements Classifier {
 	public static void main(String[] args) throws Exception {
 		ELClassifier classifier = new ELClassifier();
 		try {
-			GregorianCalendar cal1 = new GregorianCalendar();
+			long startTime = System.nanoTime();
 			classifier.classify();
-			GregorianCalendar cal2 = new GregorianCalendar();
-			double diff = (cal2.getTimeInMillis() - cal1.getTimeInMillis())/1000;
-			long completionTimeMin = (long)diff/60;
-			double completionTimeSec = diff - (completionTimeMin * 60);
-			System.out.println("Classification completed in " + completionTimeMin + " mins and " + completionTimeSec + " secs");
+			long endTime = System.nanoTime();
+			double diff = (startTime - endTime)/(double)1000000000;
+			System.out.println("Total time taken (secs): " + diff);
 		}
 		finally {
 			classifier.releaseResources();
@@ -245,14 +232,14 @@ public class ELClassifier implements Classifier {
 				byte[] PofX = KeyGenerator.generateAxiomKey(entry);					
 					   
 				final Set<byte[]> queueValues = shardedJedis.getShard(entry).smembers(PofX);
-				System.out.println("process - Size of O(X): " + queueValues.size());
+//				System.out.println("process - Size of O(X): " + queueValues.size());
 				for(byte[] value : queueValues)
 					pipelineManager.psadd(key, QofA, value);
 					
 				// get the values of R3(A)						
 //				String r3key = "R3(" + idToConceptStr(key) + ")";
 					
-				System.out.println("process-Size of R3(A): " + r3Values.size());
+//				System.out.println("process-Size of R3(A): " + r3Values.size());
 				for(byte[] value : r3Values) {
 					// get r & B					
 					byte[] role = new byte[NUM_BYTES];
@@ -267,7 +254,7 @@ public class ELClassifier implements Classifier {
 					final byte[] QofB = KeyGenerator.generateQueueKey(conceptB);
 					byte[] derivedCEKey = KeyGenerator.generateExistentialAxiomKey(role, entry);
 					final Set<byte[]> classExpressionEntries = shardedJedis.smembers(derivedCEKey);
-					System.out.println("\tprocess - Size of O(3r.X): " + classExpressionEntries.size());
+//					System.out.println("\tprocess - Size of O(3r.X): " + classExpressionEntries.size());
 					
 					for(byte[] ce : classExpressionEntries)
 						pipelineManager.psadd(conceptB, QofB, ce);			
@@ -288,8 +275,8 @@ public class ELClassifier implements Classifier {
 		// both the pre-conditions in CR4 rule.
 //T		pipelineManager.selectiveSynch(conceptB);
 		Set<byte[]> values = shardedJedis.getShard(conceptB).smembers(superClassB);
-		System.out.println("\tprocessNewEdge - No of super roles: " + superRoles.size());
-		System.out.println("\tprocessNewEdge - S(B): " + values.size());
+//		System.out.println("\tprocessNewEdge - No of super roles: " + superRoles.size());
+//		System.out.println("\tprocessNewEdge - S(B): " + values.size());
 		
 		for(byte[] s : superRoles) {	
 			
@@ -327,7 +314,7 @@ public class ELClassifier implements Classifier {
 				byte[] compoundKey = KeyGenerator.generateResultRoleCompoundKey2(role2, conceptA);
 //T				pipelineManager.selectiveSynch(compoundKey);
 				Set<byte[]> compoundRoleValues = shardedJedis.smembers(compoundKey);
-				System.out.println("\tprocessNewEdge - propchain1: " + compoundRoleValues.size());
+//				System.out.println("\tprocessNewEdge - propchain1: " + compoundRoleValues.size());
 				for(byte[] value : compoundRoleValues) {
 					// check if (A',B) \in R(u)
 					byte[] resultSuperRole = KeyGenerator.generateResultRoleCompoundKey1(role3, value);
@@ -354,7 +341,7 @@ public class ELClassifier implements Classifier {
 				byte[] compoundKey = KeyGenerator.generateResultRoleCompoundKey1(role2, conceptB);
 //T				pipelineManager.selectiveSynch(compoundKey);
 				Set<byte[]> compoundRoleValues = shardedJedis.smembers(compoundKey);
-				System.out.println("\tprocessNewEdge - propchain2: " + compoundRoleValues.size());
+//				System.out.println("\tprocessNewEdge - propchain2: " + compoundRoleValues.size());
 				for(byte[] value : compoundRoleValues) {
 					// check if (A,B') \in R(u)
 					byte[] resultSuperRole = KeyGenerator.generateResultRoleCompoundKey1(role3, conceptA);
